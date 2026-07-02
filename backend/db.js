@@ -4,7 +4,13 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, "grocery.db");
+const dbDir = process.env.DB_DIR || __dirname;
+
+if (process.env.DB_DIR) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+const dbPath = path.join(dbDir, "grocery.db");
 const db = new Database(dbPath);
 
 // Initialize schema

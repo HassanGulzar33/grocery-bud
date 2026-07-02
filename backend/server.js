@@ -93,6 +93,17 @@ function purgeAndArchiveOldHistory() {
   }
 }
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the Grocery Bud API! Please open http://localhost:8080 in your browser to view the frontend application.");
+});
+
+app.get("/api", (req, res) => {
+  res.json({ 
+    status: "running", 
+    message: "Welcome to the Grocery Bud API. Endpoints like /api/items require a valid API Key in the headers." 
+  });
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });

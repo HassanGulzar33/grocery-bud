@@ -8,8 +8,9 @@ services:
     environment:
       - PORT=5000
       - API_KEY=grocery_super_secret_token_123
+      - DB_DIR=/app/data
     volumes:
-      - sqlite-data:/app
+      - sqlite-data:/app/data
     restart: unless-stopped
 
   frontend:
