@@ -1,0 +1,22 @@
+{
+  "name": "grocery-bud-backend",
+  "version": "1.0.0",
+  "description": "Grocery Bud - Express + SQLite backend",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/api.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "lowdb": "^7.0.1",
+    "zod": "^4.4.3"
+  }
+}

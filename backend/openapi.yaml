@@ -1,0 +1,283 @@
+openapi: 3.0.3
+info:
+  title: Grocery Bud API
+  description: Premium production-ready API for managing grocery items, scheduling purchases, maintaining purchase histories, and exporting data backups.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+paths:
+  /api/health:
+    get:
+      summary: Health Check
+      description: Returns health status of the API server. Does not require authentication.
+      responses:
+        '200':
+          description: Server is operational
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /api/items:
+    get:
+      summary: Retrieve Active Items
+      description: Returns a list of active (unchecked) items in the shopping list. Requires API authentication.
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Array of active grocery items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroceryItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Add New Item
+      description: Inserts a new item into the active shopping list. Name is required.
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                  example: Tomatoes
+                quantity:
+                  type: string
+                  maxLength: 50
+                  default: "1"
+                  example: 3 kg
+      responses:
+        '201':
+          description: Item successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroceryItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/items/{id}:
+    put:
+      summary: Update Item
+      description: Updates properties of an active item. Marking `checked: true` automatically moves the item to the purchase history.
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Numeric ID of the item to update
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                  example: Organic Tomatoes
+                quantity:
+                  type: string
+                  maxLength: 50
+                  example: 2 kg
+                checked:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Item successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroceryItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete Item
+      description: Permanently deletes an item from the active shopping list.
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Numeric ID of the item to delete
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Item successfully deleted (no content response)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/history:
+    get:
+      summary: Fetch Purchase History
+      description: Retrieves completed (checked) purchases from the last 2 months grouped by calendar month. Automatically prunes and archives items older than 2 months.
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Chronological list of monthly purchase stats and products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonthlyHistory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/export:
+    get:
+      summary: Export Data Backup
+      description: Returns a comprehensive dump containing active items and the entire archived items table. Useful for user backup exports.
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Completed database export payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exported_at:
+                    type: string
+                    format: date-time
+                  active_items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GroceryItem'
+                  archived_items:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+      description: Use the Custom X-API-KEY HTTP header.
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Use Authorization Bearer header.
+  schemas:
+    GroceryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Tomatoes
+        quantity:
+          type: string
+          example: 2 kg
+        checked:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-07-01T09:00:00.000Z"
+        bought_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-07-02T11:22:00.000Z"
+    MonthlyHistory:
+      type: object
+      properties:
+        month:
+          type: string
+          example: June 2026
+        totalItems:
+          type: integer
+          example: 45
+        uniqueItems:
+          type: integer
+          example: 22
+        topItems:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: milk (olpers)
+              count:
+                type: integer
+                example: 4
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroceryItem'
+  responses:
+    BadRequest:
+      description: Request parameter validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Item name is required"
+    Unauthorized:
+      description: Authorization key is invalid or missing
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized. Invalid or missing API key."
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Item not found"
